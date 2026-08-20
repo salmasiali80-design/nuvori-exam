@@ -271,16 +271,20 @@ var S={lab:{},draft:''};
 try{S=JSON.parse(localStorage.getItem(K))||S;}catch(e){}
 function save(){try{localStorage.setItem(K,JSON.stringify(S));}catch(e){}}
 function words(t){t=t.trim();return t?t.split(/\s+/).length:0;}
+function ready(){return words(S.draft||'')>0;}
+function gate(){
+  var ok=ready();
+  ['wa','cp','dl'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.disabled=!ok; });
+}
 function sync(){
   document.querySelectorAll('.lab input').forEach(function(inp){
     var i=inp.dataset.i; if(S.lab[i]) inp.value=S.lab[i];
     document.querySelector('.reveal[data-i="'+i+'"]').disabled = !inp.value.trim();
   });
-  var d=document.getElementById('draft'); if(d){ d.value=S.draft||'';
-    document.getElementById('wc').textContent=words(d.value);
-    var ok=words(d.value)>0;
-    document.getElementById('wa').disabled=!ok; document.getElementById('cp').disabled=!ok;
-    document.getElementById('dl').disabled=!ok; }
+  var d=document.getElementById('draft');
+  if(d){ d.value=S.draft||''; document.getElementById('wc').textContent=words(d.value); }
+  gate();
 }
 document.addEventListener('input',function(e){
   if(e.target.matches('.lab input')){
@@ -288,22 +292,20 @@ document.addEventListener('input',function(e){
     document.querySelector('.reveal[data-i="'+e.target.dataset.i+'"]').disabled=!e.target.value.trim();
     save(); }
   if(e.target.id==='draft'){ S.draft=e.target.value; save();
-    document.getElementById('wc').textContent=words(e.target.value);
-    var ok=words(e.target.value)>0;
-    document.getElementById('wa').disabled=!ok; document.getElementById('cp').disabled=!ok;
-    document.getElementById('dl').disabled=!ok; }
+    document.getElementById('wc').textContent=words(e.target.value); gate(); }
 });
 document.addEventListener('click',function(e){
   var b=e.target.closest('.reveal');
   if(b&&!b.disabled){ document.getElementById('a'+b.dataset.i).classList.add('on');
     b.disabled=true; b.textContent='AÇILDI'; }
 });
+function answer(i){ return (S.lab[i]||'').trim() || '(boş)'; }
 function payload(){
-  var L=['NUVORI · EXAM 01 — RAPOR CALISMASI','Ogrenci: '+NAME+'  ('+CODE+')',''];
-  L.push('DUZELTILEN CUMLELER');
-  OWN.forEach(function(o,i){ L.push((i+1)+'. '+o); L.push('   -> '+((S.lab[i]||'').trim()||'(bos)')); });
-  L.push(''); L.push('IKINCI YAZIM ('+words(S.draft||'')+' kelime)');
-  L.push((S.draft||'').trim()); L.push(''); L.push('CALISMA SONU');
+  var L=['NUVORI · EXAM 01 — RAPOR ÇALIŞMASI','Öğrenci: '+NAME+'  ('+CODE+')',''];
+  L.push('DÜZELTTİĞİN CÜMLELER');
+  OWN.forEach(function(o,i){ L.push((i+1)+'. '+o); L.push('   → '+answer(i)); });
+  L.push(''); L.push('İKİNCİ YAZIM ('+words(S.draft||'')+' kelime)');
+  L.push((S.draft||'').trim()); L.push(''); L.push('ÇALIŞMA SONU');
   return L.join('\n');
 }
 var wa=document.getElementById('wa');
@@ -318,28 +320,61 @@ if(cp) cp.addEventListener('click',function(){
 var dl=document.getElementById('dl');
 if(dl) dl.addEventListener('click',function(){
   var esc=function(t){var d=document.createElement('div');d.textContent=t;return d.innerHTML;};
+  var em=document.querySelector('.cover img.em').src, wm=document.querySelector('.cover img.wm').src;
+  var today=new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'});
+  var rows='';
+  OWN.forEach(function(o,i){
+    rows+='<div class="it"><div class="n">'+(i+1)+'</div><div><div class="o">'+esc(o)+'</div>'
+      +'<div class="a">'+esc(answer(i))+'</div></div></div>'; });
+  var css='*{margin:0;padding:0;box-sizing:border-box}'
+    +'html{color-scheme:only light}'
+    +'body{background:#060607;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,'
+    +'Helvetica,Arial,sans-serif;color:#1A1A1C;line-height:1.6;'
+    +'font-variant-numeric:tabular-nums lining-nums;-webkit-font-smoothing:antialiased}'
+    +'.page{max-width:640px;margin:0 auto;background:#F7F4ED}'
+    +'.hd{background:#0B0B0C;padding:44px 30px 34px;text-align:center}'
+    +'.hd img.e{width:48px;height:48px;display:block;margin:0 auto 16px}'
+    +'.hd img.w{width:140px;height:auto;display:block;margin:0 auto 22px}'
+    +'.hd .k{font-size:9.5px;font-weight:600;letter-spacing:.24em;color:#D6A23A;margin-bottom:16px}'
+    +'.hd h1{font-family:Georgia,serif;font-weight:400;font-size:30px;color:#E4DFD5;'
+    +'line-height:1.15;margin-bottom:16px}'
+    +'.hd .m{font-size:11px;letter-spacing:.13em;color:#9C968C}'
+    +'.bd{padding:38px 30px}'
+    +'.lb{font-size:10.5px;font-weight:600;letter-spacing:.19em;color:#9A742F;margin-bottom:18px}'
+    +'.it{display:grid;grid-template-columns:auto 1fr;gap:0 16px;padding:15px 0;'
+    +'border-bottom:1px solid rgba(154,116,47,.26)}'
+    +'.it:last-child{border-bottom:0}'
+    +'.it .n{font-family:Georgia,serif;font-size:19px;color:#9A742F;line-height:1.35}'
+    +'.it .o{font-family:Georgia,serif;font-size:17px;color:#55524B;margin-bottom:7px}'
+    +'.it .a{font-size:16.5px;font-weight:600;color:#1A1A1C}'
+    +'.dr{margin-top:34px}'
+    +'.dr .box{background:#FFFDF8;border:1px solid rgba(154,116,47,.26);padding:20px;'
+    +'white-space:pre-wrap;font-size:16px;line-height:1.75;color:#1A1A1C}'
+    +'.ft{background:#0B0B0C;padding:34px 30px;text-align:center}'
+    +'.ft .s{font-size:11px;font-weight:600;letter-spacing:.2em;color:#D6A23A;margin-bottom:24px}'
+    +'.ft .r{border-top:1px solid rgba(214,162,58,.22);padding-top:20px}'
+    +'.ft .nm{font-family:Georgia,serif;font-size:17px;color:#E4DFD5;margin-bottom:6px}'
+    +'.ft .cr{font-size:10.5px;color:#9C968C;line-height:1.7}'
+    +'@media print{.page{max-width:none}}';
   var doc='<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8">'
     +'<meta name="viewport" content="width=device-width,initial-scale=1">'
-    +'<title>NUVORI · '+esc(NAME)+'</title><style>'
-    +'body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;'
-    +'background:#F7F4ED;color:#1A1A1C;line-height:1.6;max-width:620px;margin:0 auto;padding:28px 20px}'
-    +'h1{font-size:20px;margin-bottom:4px}.m{font-size:13px;color:#55524B;margin-bottom:24px}'
-    +'h2{font-size:12px;letter-spacing:.14em;color:#9A742F;margin:26px 0 10px}'
-    +'li{margin-bottom:12px}.o{color:#55524B}.a{font-weight:600}'
-    +'pre{white-space:pre-wrap;font:inherit;background:#FFFDF8;border:1px solid rgba(154,116,47,.26);padding:14px}'
-    +'.e{margin-top:26px;font-size:12px;letter-spacing:.14em;color:#9A742F}</style></head><body>'
-    +'<h1>NUVORI · Exam 01 — Rapor calismasi</h1>'
-    +'<div class="m">'+esc(NAME)+' · '+esc(CODE)+'</div><h2>DUZELTILEN CUMLELER</h2><ol>';
-  OWN.forEach(function(o,i){
-    doc+='<li><div class="o">'+esc(o)+'</div><div class="a">'
-      +esc((S.lab[i]||'').trim()||'(bos)')+'</div></li>'; });
-  doc+='</ol><h2>IKINCI YAZIM · '+words(S.draft||'')+' KELIME</h2><pre>'
-    +esc((S.draft||'').trim())+'</pre><div class="e">CALISMA SONU</div></body></html>';
-  var u=URL.createObjectURL(new Blob([doc],{type:'text/html'}));
+    +'<title>NUVORI · '+esc(NAME)+'</title><style>'+css+'</style></head><body><div class="page">'
+    +'<div class="hd"><img class="e" src="'+em+'" alt="NUVORI"><img class="w" src="'+wm+'" alt="NUVORI">'
+    +'<div class="k" lang="en">ENGLISH PERFORMANCE EXAMINATION 01</div>'
+    +'<h1>Rapor çalışması</h1><div class="m">'+esc(NAME)+' · '+today+'</div></div>'
+    +'<div class="bd"><div class="lb">DÜZELTTİĞİN CÜMLELER</div>'+rows
+    +'<div class="dr"><div class="lb">İKİNCİ YAZIM · '+words(S.draft||'')+' KELİME</div>'
+    +'<div class="box">'+esc((S.draft||'').trim())+'</div></div></div>'
+    +'<div class="ft"><div class="s">ÇALIŞMA SONU</div><div class="r">'
+    +'<div class="nm">Ali Salmasi</div><div class="cr" lang="en">'
+    +'Former University Lecturer · Cambridge CELTA · 25+ Years<br>'
+    +'IELTS · TOEFL · SAT · YDS &amp; More · Interview Coaching</div></div></div>'
+    +'</div></body></html>';
+  var u=URL.createObjectURL(new Blob([doc],{type:'text/html;charset=utf-8'}));
   var a=document.createElement('a'); a.href=u; a.download='nuvori-'+CODE+'-calisma.html';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(function(){URL.revokeObjectURL(u);},1500);
-  dl.textContent='INDIRILDI'; setTimeout(function(){dl.textContent='İNDİR';},2200);
+  dl.textContent='İNDİRİLDİ'; setTimeout(function(){dl.textContent='İNDİR';},2200);
 });
 sync();
 </script>
